@@ -1,0 +1,73 @@
+apply plugin: 'java'
+apply plugin: 'maven'
+
+group = 'com.xebialabs.deployit'
+version = '1.0-SNAPSHOT'
+
+sourceCompatibility = 1.6
+sourceEncoding = 'UTF-8'
+
+configurations {
+  // http://issues.gradle.org/browse/GRADLE-784
+  provided
+}
+
+serverVersion = '3.6.3'
+
+dependencies {
+  provided "com.xebialabs.deployit:server-core:${serverVersion}"
+  compile 'ch.qos.logback:logback-classic:0.9.24'
+  testCompile 'junit:junit:4.8.2'
+}
+
+repositories {
+	mavenLocal()
+}
+
+sourceSets {
+  main { compileClasspath += configurations.provided }
+}
+
+afterEvaluate { eachProject ->
+  Set testTasks = eachProject.tasks.withType(Test).all
+  
+  testTasks.each { testTask ->
+    testTask.onlyIf { !project.hasProperty('skipTests') }
+    testTask.afterSuite { descriptor, result ->
+      if (descriptor.className != null) {
+        println "${descriptor.className}: ${result.testCount} tests; failed: ${result.failedTestCount}; skipped: ${result.skippedTestCount}"
+      } else if (descriptor.className == null && descriptor.parent == null) {
+        println "Total: ${result.testCount} tests; failed: ${result.failedTestCount}; skipped: ${result.skippedTestCount}"
+      }
+    }
+  }
+}
+
+task generatePom << {
+  conf2ScopeMappings.addMapping(Integer.MAX_VALUE, configurations.provided, 
+    Conf2ScopeMappingContainer.PROVIDED)
+  pom {
+    project { 
+      build { 
+        plugins {
+          plugin {
+            artifactId 'maven-compiler-plugin'
+            version '2.3'
+            configuration {
+              encoding = sourceEncoding 
+              source = "${sourceCompatibility}".toString()
+              target = "${sourceCompatibility}".toString()
+            }
+          }
+          plugin {
+            artifactId 'maven-resources-plugin'
+            version '2.3'
+            configuration {
+              encoding = sourceEncoding
+            }
+          }
+        }
+      }
+    }
+  }.writeTo('pom.xml')
+}

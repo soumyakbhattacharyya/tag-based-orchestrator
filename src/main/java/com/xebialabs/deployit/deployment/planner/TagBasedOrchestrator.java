@@ -2,7 +2,7 @@ package com.xebialabs.deployit.deployment.planner;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Iterables.getOnlyElement;
-import static com.google.common.collect.Maps.newHashMap;
+import static com.google.common.collect.Maps.newTreeMap;
 import static com.google.common.collect.Sets.filter;
 import static com.google.common.collect.Sets.newHashSet;
 import static com.xebialabs.deployit.plugin.api.deployment.execution.Plans.interleaved;
@@ -10,9 +10,9 @@ import static com.xebialabs.deployit.plugin.api.deployment.execution.Plans.seria
 
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.SortedMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +40,7 @@ class TagBasedOrchestrator implements Orchestrator {
 
         Set<Delta> unallocatedDeltas = newHashSet(spec.getDeltas());
         // modifies unallocatedDeltas
-        Map<String, Set<Delta>> bucketsWithDeltas = takeOutDeltasInBuckets(unallocatedDeltas);
+        SortedMap<String, Set<Delta>> bucketsWithDeltas = takeOutDeltasInBuckets(unallocatedDeltas);
 
         List<Plan> interleavedPlans = Lists.newArrayList();
         for (Entry<String, Set<Delta>> bucketWithDeltas : bucketsWithDeltas.entrySet()) {
@@ -54,8 +54,8 @@ class TagBasedOrchestrator implements Orchestrator {
         return serial(interleavedPlans.toArray(new Plan[0]));
     }
 
-    private static Map<String, Set<Delta>> takeOutDeltasInBuckets(Set<Delta> deltas) {
-        Map<String, Set<Delta>> bucketsWithDeltas = newHashMap();
+    private static SortedMap<String, Set<Delta>> takeOutDeltasInBuckets(Set<Delta> deltas) {
+        SortedMap<String, Set<Delta>> bucketsWithDeltas = newTreeMap();
         
         for (Iterator<Delta> iterator = deltas.iterator(); iterator.hasNext();) {
             Delta delta = iterator.next();
